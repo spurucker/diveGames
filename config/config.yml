@@ -1,0 +1,5 @@
+timeout: 10
+max_idle_conns: 10
+idle_conn_timeout: 30
+max_retries: 3
+retry_wait_duration: 2
