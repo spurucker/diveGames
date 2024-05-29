@@ -70,7 +70,7 @@ const (
             "last": "1688671969993150842"
         }
     }`
-	expectedResponse = "{\n  \"ltp\": [\n    {\n      \"pair\": \"BTC/USD\",\n      \"amount\": \"30243.40000\"\n    },\n    {\n      \"pair\": \"BTC/CHF\",\n      \"amount\": \"30243.40000\"\n    },\n    {\n      \"pair\": \"BTC/EUR\",\n      \"amount\": \"30243.40000\"\n    }\n  ]\n}"
+	expectedResponse = "{\n  \"ltp\": [\n    {\n      \"pair\": \"BTC/USD\",\n      \"amount\": 30243.40000\n    },\n    {\n      \"pair\": \"BTC/CHF\",\n      \"amount\": 30243.40000\n    },\n    {\n      \"pair\": \"BTC/EUR\",\n      \"amount\": 30243.40000\n    }\n  ]\n}"
 )
 
 func TestGetLastTradePricesOk(t *testing.T) {

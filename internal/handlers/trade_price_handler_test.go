@@ -30,7 +30,7 @@ func TestMapTradeResponseOk(t *testing.T) {
 
 	handler := TradePriceHandler{tradeFetcherService: serviceMock}
 
-	usdTrade := &models2.TradePrice{Pair: "BTC/USD", Amount: "1"}
+	usdTrade := &models2.TradePrice{Pair: "BTC/USD", Amount: 1}
 	serviceMock.On("GetLastTradePriceByPair", "BTC/USD").Return(usdTrade, nil)
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)

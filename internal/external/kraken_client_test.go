@@ -52,7 +52,7 @@ func TestGetLastTradePriceByPairOk(t *testing.T) {
 	httpResponse := &http.Response{StatusCode: 200, Body: body}
 	tradeUSD := models.TradePrice{
 		Pair:   "BTC/USD",
-		Amount: "30243.40000",
+		Amount: 30243.40000,
 	}
 	clientMock.On("Get", fmt.Sprintf(url, trasnsformations.MapPairsToKrakenKeys["BTC/USD"], 1)).Return(httpResponse, nil)
 
