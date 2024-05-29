@@ -1,7 +1,6 @@
 package usercase
 
 import (
-	"diveGames"
 	"diveGames/domain"
 )
 
@@ -17,10 +16,10 @@ func NewFetchTradePriceUserCase(tradeFetcher TradeFetcher) *FetchTradePriceUserC
 	return &FetchTradePriceUserCase{tradeFetcher: tradeFetcher}
 }
 
-func (u *FetchTradePriceUserCase) GetLastTradePrices() ([]*domain.Trade, error) {
+func (u *FetchTradePriceUserCase) GetLastTradePricesByPairs(pairs []string) ([]*domain.Trade, error) {
 	var err error
-	trades := make([]*domain.Trade, len(diveGames.PairValues))
-	for i, pair := range diveGames.PairValues {
+	trades := make([]*domain.Trade, len(pairs))
+	for i, pair := range pairs {
 		trades[i], err = u.tradeFetcher.GetLastTradePriceByPair(pair)
 		if err != nil {
 			return nil, err

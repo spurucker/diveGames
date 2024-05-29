@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"diveGames"
 	"diveGames/domain"
 	"diveGames/repository/RepositoryDTO"
 	"errors"
@@ -41,7 +40,7 @@ func (m MapperMock) MapResponseToTrade(body io.ReadCloser, pair string) (*domain
 
 type EmptyReadCloser struct{}
 
-func (erc EmptyReadCloser) Read(p []byte) (int, error) {
+func (erc EmptyReadCloser) Read([]byte) (int, error) {
 	return 0, nil
 }
 
@@ -59,12 +58,12 @@ func TestGetLastTradePriceByPairOk(t *testing.T) {
 	tradeUSD := domain.Trade{
 		Price: "1.00",
 	}
-	clientMock.On("Get", fmt.Sprintf(url, RepositoryDTO.MapPairsToKrakenKeys[diveGames.PairUSD], 1)).Return(httpResponse, nil)
-	mapperMock.On("MapResponseToTrade", mock.Anything, RepositoryDTO.MapPairsToKrakenKeys[diveGames.PairUSD]).Return(&tradeUSD, nil)
+	clientMock.On("Get", fmt.Sprintf(url, RepositoryDTO.MapPairsToKrakenKeys["BTC/USD"], 1)).Return(httpResponse, nil)
+	mapperMock.On("MapResponseToTrade", mock.Anything, RepositoryDTO.MapPairsToKrakenKeys["BTC/USD"]).Return(&tradeUSD, nil)
 
 	ksi := KrakenServiceImpl{url, mapperMock, clientMock}
 
-	trade, err := ksi.GetLastTradePriceByPair(diveGames.PairUSD)
+	trade, err := ksi.GetLastTradePriceByPair("BTC/USD")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, trade)
@@ -80,7 +79,7 @@ func TestGetLastTradePriceByPairHttpClientError(t *testing.T) {
 
 	ksi := KrakenServiceImpl{url, mapperMock, clientMock}
 
-	trade, err := ksi.GetLastTradePriceByPair(diveGames.PairUSD)
+	trade, err := ksi.GetLastTradePriceByPair("BTC/USD")
 
 	assert.NotNil(t, err)
 	assert.Nil(t, trade)
@@ -94,12 +93,12 @@ func TestGetLastTradePriceByPairMapperError(t *testing.T) {
 
 	body := EmptyReadCloser{}
 	httpResponse := &http.Response{StatusCode: 200, Body: &body}
-	clientMock.On("Get", fmt.Sprintf(url, RepositoryDTO.MapPairsToKrakenKeys[diveGames.PairUSD], 1)).Return(httpResponse, nil)
-	mapperMock.On("MapResponseToTrade", mock.Anything, RepositoryDTO.MapPairsToKrakenKeys[diveGames.PairUSD]).Return(nil, errors.New("some error"))
+	clientMock.On("Get", fmt.Sprintf(url, RepositoryDTO.MapPairsToKrakenKeys["BTC/USD"], 1)).Return(httpResponse, nil)
+	mapperMock.On("MapResponseToTrade", mock.Anything, RepositoryDTO.MapPairsToKrakenKeys["BTC/USD"]).Return(nil, errors.New("some error"))
 
 	ksi := KrakenServiceImpl{url, mapperMock, clientMock}
 
-	trade, err := ksi.GetLastTradePriceByPair(diveGames.PairUSD)
+	trade, err := ksi.GetLastTradePriceByPair("BTC/USD")
 
 	assert.NotNil(t, err)
 	assert.Nil(t, trade)

@@ -17,8 +17,8 @@ type ServiceMock struct {
 	mock.Mock
 }
 
-func (m *ServiceMock) GetLastTradePrices() ([]*domain.Trade, error) {
-	args := m.Called()
+func (m *ServiceMock) GetLastTradePricesByPairs(pairs []string) ([]*domain.Trade, error) {
+	args := m.Called(pairs)
 	arg := args.Get(0)
 	if arg == nil {
 		return nil, args.Error(1)
@@ -48,11 +48,12 @@ func TestMapTradeResponseOk(t *testing.T) {
 	mockResponse := handlerDTO.LastTradePrices{
 		Trades: make([]handlerDTO.TradePrice, 0),
 	}
-	serviceMock.On("GetLastTradePrices").Return(trades, nil)
+	serviceMock.On("GetLastTradePricesByPairs", []string{"BTC/USD"}).Return(trades, nil)
 	mapperMock.On("MapTradeToLastTradesPrice", trades).Return(&mockResponse, nil)
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	handler.FetchTradePrice(context)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD", nil)
+	handler.FetchTradePriceByPairs(context)
 
 	var result handlerDTO.LastTradePrices
 	json.NewDecoder(recorder.Body).Decode(&result)
@@ -66,13 +67,14 @@ func TestMapTradeResponseErrorInService(t *testing.T) {
 	mapperMock := &MapperMock{}
 	handler := TradePriceHandler{tradeFetcherService: serviceMock, tradeHandlerMapper: mapperMock}
 
-	serviceMock.On("GetLastTradePrices").Return(nil, errors.New("some error"))
+	serviceMock.On("GetLastTradePricesByPairs", []string{"BTC/USD"}).Return(nil, errors.New("some error"))
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	handler.FetchTradePrice(context)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD", nil)
+	handler.FetchTradePriceByPairs(context)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-	assert.Equal(t, "{\"error\":\"some error\"}", recorder.Body.String())
+	assert.Equal(t, "{\"error\":\"some error\",\"status\":500}", recorder.Body.String())
 }
 
 func TestMapTradeResponseErrorInMapper(t *testing.T) {
@@ -81,12 +83,41 @@ func TestMapTradeResponseErrorInMapper(t *testing.T) {
 	handler := TradePriceHandler{tradeFetcherService: serviceMock, tradeHandlerMapper: mapperMock}
 
 	trades := make([]*domain.Trade, 1)
-	serviceMock.On("GetLastTradePrices").Return(trades, nil)
+	serviceMock.On("GetLastTradePricesByPairs", []string{"BTC/USD"}).Return(trades, nil)
 	mapperMock.On("MapTradeToLastTradesPrice", trades).Return(nil, errors.New("some error"))
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	handler.FetchTradePrice(context)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD", nil)
+	handler.FetchTradePriceByPairs(context)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-	assert.Equal(t, "{\"error mapping response\":\"some error\"}", recorder.Body.String())
+	assert.Equal(t, "{\"error mapping response\":\"some error\",\"status\":500}", recorder.Body.String())
+}
+
+func TestMapTradeResponseNoneQueryParams(t *testing.T) {
+	serviceMock := &ServiceMock{}
+	mapperMock := &MapperMock{}
+	handler := TradePriceHandler{tradeFetcherService: serviceMock, tradeHandlerMapper: mapperMock}
+
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair", nil)
+	handler.FetchTradePriceByPairs(context)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	assert.Equal(t, "{\"error\":\"missing pair parameter. One (and only one) 'pair' or 'pairs' query parameter is required\",\"status\":400}", recorder.Body.String())
+}
+
+func TestMapTradeResponseTooManyQueryParams(t *testing.T) {
+	serviceMock := &ServiceMock{}
+	mapperMock := &MapperMock{}
+	handler := TradePriceHandler{tradeFetcherService: serviceMock, tradeHandlerMapper: mapperMock}
+
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD&pairs=[BTC/USD]", nil)
+	handler.FetchTradePriceByPairs(context)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	assert.Equal(t, "{\"error\":\"one (and only one) 'pair' or 'pairs' query parameter is required\",\"status\":400}", recorder.Body.String())
 }

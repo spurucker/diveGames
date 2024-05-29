@@ -8,11 +8,13 @@ import (
 	"diveGames/repository/RepositoryDTO"
 	"diveGames/usercase"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
@@ -83,7 +85,7 @@ func TestGetLastTradePricesOk(t *testing.T) {
 	setTradePriceHandlerToServer(r, server.URL)
 	setKrakenMockServer(r)
 
-	resp, err := http.Get(server.URL + "/ltp")
+	resp, err := http.Get(getUrl(server))
 	defer resp.Body.Close()
 	assert.Nil(t, err)
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
@@ -92,7 +94,7 @@ func TestGetLastTradePricesOk(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, body)
 
-	assert.Equal(t, unmarshalLastTradePrices(body), unmarshalLastTradePrices([]byte(expectedResponse)))
+	assert.Equal(t, unmarshalLastTradePrices([]byte(expectedResponse)), unmarshalLastTradePrices(body))
 }
 
 func TestGetLastTradePricesKrakenInternalError(t *testing.T) {
@@ -103,7 +105,7 @@ func TestGetLastTradePricesKrakenInternalError(t *testing.T) {
 	setTradePriceHandlerToServer(r, server.URL)
 	setKrakenMockServerWithInternalErrors(r)
 
-	resp, err := http.Get(server.URL + "/ltp")
+	resp, err := http.Get(getUrl(server))
 	defer resp.Body.Close()
 	assert.Nil(t, err)
 	assert.Equal(t, resp.StatusCode, http.StatusInternalServerError)
@@ -112,7 +114,7 @@ func TestGetLastTradePricesKrakenInternalError(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, body)
 
-	assert.Equal(t, string(body), "{\"error\":\"We received the following errors from Kraken services \\nSome error\\n\"}")
+	assert.Equal(t, "{\"error\":\"We received the following errors from Kraken services \\nSome error\\n\",\"status\":500}", string(body))
 }
 
 func TestGetLastTradePricesKrakenNotFoundError(t *testing.T) {
@@ -123,7 +125,7 @@ func TestGetLastTradePricesKrakenNotFoundError(t *testing.T) {
 	setTradePriceHandlerToServer(r, server.URL)
 	setKrakenMockServerNotFoundError(r)
 
-	resp, err := http.Get(server.URL + "/ltp")
+	resp, err := http.Get(getUrl(server))
 	defer resp.Body.Close()
 	assert.Nil(t, err)
 	assert.Equal(t, resp.StatusCode, http.StatusInternalServerError)
@@ -132,7 +134,7 @@ func TestGetLastTradePricesKrakenNotFoundError(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, body)
 
-	assert.Equal(t, string(body), "{\"error\":\"Kraken endpoint returned status code 404\"}")
+	assert.Equal(t, "{\"error\":\"Kraken endpoint returned status code 404\",\"status\":500}", string(body))
 }
 
 func setTradePriceHandlerToServer(r *gin.Engine, url string) {
@@ -196,4 +198,23 @@ func unmarshalLastTradePrices(b []byte) handlerDTO.LastTradePrices {
 		panic(err)
 	}
 	return lastTradePrices
+}
+
+func getUrl(server *httptest.Server) string {
+	params := map[string][]string{
+		"pairs": {"BTC/USD", "BTC/CHF", "BTC/EUR"},
+	}
+	u, err := url.Parse(server.URL + "/api/v1/ltp")
+	q := u.Query()
+	for key, values := range params {
+		for _, value := range values {
+			q.Add(key, value)
+		}
+	}
+	u.RawQuery = q.Encode()
+	if err != nil {
+		fmt.Println("Error creating url:", err)
+		panic(err)
+	}
+	return u.String()
 }

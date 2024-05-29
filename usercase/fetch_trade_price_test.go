@@ -1,7 +1,6 @@
 package usercase
 
 import (
-	"diveGames"
 	"diveGames/domain"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -35,26 +34,26 @@ func TestGetLastTradePricesOk(t *testing.T) {
 	tradeCHF := domain.Trade{
 		Price: "3.00",
 	}
-	mock.On("GetLastTradePriceByPair", diveGames.PairUSD).Return(&tradeUSD, nil)
-	mock.On("GetLastTradePriceByPair", diveGames.PairEUR).Return(&tradeEUR, nil)
-	mock.On("GetLastTradePriceByPair", diveGames.PairCHF).Return(&tradeCHF, nil)
+	mock.On("GetLastTradePriceByPair", "BTC/USD").Return(&tradeUSD, nil)
+	mock.On("GetLastTradePriceByPair", "BTC/EUR").Return(&tradeEUR, nil)
+	mock.On("GetLastTradePriceByPair", "BTC/CHF").Return(&tradeCHF, nil)
 
-	result, err := userCase.GetLastTradePrices()
+	result, err := userCase.GetLastTradePricesByPairs([]string{"BTC/USD", "BTC/EUR", "BTC/CHF"})
 
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 3, len(result))
 	assert.Equal(t, tradeUSD, *result[0])
-	assert.Equal(t, tradeCHF, *result[1])
-	assert.Equal(t, tradeEUR, *result[2])
+	assert.Equal(t, tradeEUR, *result[1])
+	assert.Equal(t, tradeCHF, *result[2])
 }
 
 func TestGetLastTradePricesError(t *testing.T) {
 	mock := TradeFetcherMock{}
 	userCase := FetchTradePriceUserCase{tradeFetcher: &mock}
-	mock.On("GetLastTradePriceByPair", diveGames.PairUSD).Return(nil, errors.New("Some error"))
+	mock.On("GetLastTradePriceByPair", "BTC/USD").Return(nil, errors.New("Some error"))
 
-	trades, err := userCase.GetLastTradePrices()
+	trades, err := userCase.GetLastTradePricesByPairs([]string{"BTC/USD", "BTC/EUR", "BTC/CHF"})
 
 	assert.NotNil(t, err)
 	assert.Nil(t, trades)
