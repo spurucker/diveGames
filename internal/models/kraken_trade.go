@@ -1,6 +1,6 @@
-package RepositoryDTO
+package models
 
-type TradesResponse struct {
+type KrakenTrade struct {
 	Error  []string               `json:"error"`
 	Result map[string]interface{} `json:"result"`
 }

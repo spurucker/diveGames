@@ -1,12 +1,10 @@
-package main
+package test
 
 import (
-	"diveGames/handler"
-	"diveGames/handler/handlerDTO"
-	"diveGames/httpClient"
-	"diveGames/repository"
-	"diveGames/repository/RepositoryDTO"
-	"diveGames/usercase"
+	"diveGames/internal/config"
+	"diveGames/internal/external"
+	"diveGames/internal/handlers"
+	models2 "diveGames/internal/models"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -86,7 +84,7 @@ func TestGetLastTradePricesOk(t *testing.T) {
 	resp, err := http.Get(server.URL + "/api/v1/ltp?pairs=BTC/USD&pairs=BTC/CHF&pairs=BTC/EUR")
 	defer resp.Body.Close()
 	assert.Nil(t, err)
-	assert.Equal(t, resp.StatusCode, http.StatusOK)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	body, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
@@ -136,11 +134,10 @@ func TestGetLastTradePricesKrakenNotFoundError(t *testing.T) {
 }
 
 func setTradePriceHandlerToServer(r *gin.Engine, url string) {
-	httpConfig, _ := httpClient.NewHTTPClientConfig("../config/config.yml")
-
-	krakenService := repository.NewKrakenServiceImpl(url+"/0/public/Trades?pair=%s&count=%d", RepositoryDTO.NewTradeMapper(), httpClient.NewHTTPClient(httpConfig))
-	fetchTradePriceUC := usercase.NewFetchTradePriceUserCase(krakenService)
-	handler.NewTradePriceHandler(r, fetchTradePriceUC, handlerDTO.NewTradePriceMapper())
+	httpClient, _ := config.NewHTTPClient("../config/config.yml")
+	krakenService := external.NewKrakenServiceImpl(url+"/0/public/Trades?pair=%s&count=%d", httpClient)
+	tph := handlers.NewTradePriceHandler(krakenService)
+	r.GET("/api/v1/ltp", tph.FetchTradePriceByPairs)
 }
 
 func setKrakenMockServer(r *gin.Engine) {
@@ -182,16 +179,16 @@ func setKrakenMockServerWithInternalErrors(r *gin.Engine) {
 	})
 }
 
-func unmarshalMockResponse(s string) RepositoryDTO.TradesResponse {
-	var tradesResponse RepositoryDTO.TradesResponse
+func unmarshalMockResponse(s string) models2.KrakenTrade {
+	var tradesResponse models2.KrakenTrade
 	if err := json.Unmarshal([]byte(s), &tradesResponse); err != nil {
 		panic(err)
 	}
 	return tradesResponse
 }
 
-func unmarshalLastTradePrices(b []byte) handlerDTO.LastTradePrices {
-	var lastTradePrices handlerDTO.LastTradePrices
+func unmarshalLastTradePrices(b []byte) models2.LastTradePrices {
+	var lastTradePrices models2.LastTradePrices
 	if err := json.Unmarshal(b, &lastTradePrices); err != nil {
 		panic(err)
 	}

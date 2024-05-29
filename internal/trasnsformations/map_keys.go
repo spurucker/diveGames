@@ -1,4 +1,4 @@
-package RepositoryDTO
+package trasnsformations
 
 var MapPairsToKrakenKeys = map[string]string{
 	"BTC/USD": "XXBTZUSD",

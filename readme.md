@@ -14,6 +14,12 @@
 
      http://localhost:8080/api/v1/ltp?pairs=BTC/USD&pairs=BTC/EUR
 
+## New Notes
+After receiving feedback, I explored different ways to structure the project and decided to use the Standard Layout as defined [here](https://github.com/golang-standards/project-layout). I removed domain-specific errors and reduced dependencies.
+
+
+It's specified that the price should be numeric without specifying the required number of decimals. Given the sensitivity of this information (even slight changes in cents can significantly impact prices), I've decided to return the exact value as provided by Kraken.
+
 ## Requirements
 ### Explicit Requirements
 Create a GET endpoint at '/api/v1/ltp' that will receive one or more pairs and will return the last traded price for them
