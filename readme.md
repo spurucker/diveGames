@@ -12,11 +12,11 @@
 - Call the service from a browser calling this url (postman or curl can be used as well)
 
 
-     http://localhost:8080/api/v1/ltp
+     http://localhost:8080/api/v1/ltp?pairs=BTC/USD&pairs=BTC/EUR
 
 ## Requirements
 ### Explicit Requirements
-Create a GET endpoint at '/api/v1/ltp' that returns the last traded price for the pairs BTC/USD, BTC/EUR, and BTC/CHF
+Create a GET endpoint at '/api/v1/ltp' that will receive one or more pairs and will return the last traded price for them
 ```json
 {
   "ltp": [

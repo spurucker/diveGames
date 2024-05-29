@@ -32,13 +32,7 @@ func (h *TradePriceHandler) FetchTradePriceByPairs(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "status": http.StatusBadRequest})
 		return
 	}
-	var pairs []string
-	if c.Query("pair") != "" {
-		pairs = []string{c.Query("pair")}
-	} else {
-		pairs = c.QueryArray("pairs")
-	}
-	trades, err := h.tradeFetcherService.GetLastTradePricesByPairs(pairs)
+	trades, err := h.tradeFetcherService.GetLastTradePricesByPairs(c.QueryArray("pairs"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": http.StatusInternalServerError})
 		return
@@ -52,13 +46,9 @@ func (h *TradePriceHandler) FetchTradePriceByPairs(c *gin.Context) {
 }
 
 func (h *TradePriceHandler) validateFetchTradePriceByPairsParams(c *gin.Context) error {
-	pairParam := c.Query("pair")
 	pairsParam := c.QueryArray("pairs")
-	if pairParam == "" && len(pairsParam) == 0 {
-		return errors.New("missing pair parameter. One (and only one) 'pair' or 'pairs' query parameter is required")
-	}
-	if pairParam != "" && len(pairsParam) > 0 {
-		return errors.New("one (and only one) 'pair' or 'pairs' query parameter is required")
+	if len(pairsParam) == 0 {
+		return errors.New("'pairs' param is required")
 	}
 	return nil
 }

@@ -52,7 +52,7 @@ func TestMapTradeResponseOk(t *testing.T) {
 	mapperMock.On("MapTradeToLastTradesPrice", trades).Return(&mockResponse, nil)
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD", nil)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pairs=BTC/USD", nil)
 	handler.FetchTradePriceByPairs(context)
 
 	var result handlerDTO.LastTradePrices
@@ -70,7 +70,7 @@ func TestMapTradeResponseErrorInService(t *testing.T) {
 	serviceMock.On("GetLastTradePricesByPairs", []string{"BTC/USD"}).Return(nil, errors.New("some error"))
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD", nil)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pairs=BTC/USD", nil)
 	handler.FetchTradePriceByPairs(context)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -87,7 +87,7 @@ func TestMapTradeResponseErrorInMapper(t *testing.T) {
 	mapperMock.On("MapTradeToLastTradesPrice", trades).Return(nil, errors.New("some error"))
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD", nil)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pairs=BTC/USD", nil)
 	handler.FetchTradePriceByPairs(context)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -101,23 +101,9 @@ func TestMapTradeResponseNoneQueryParams(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(recorder)
-	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair", nil)
+	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp", nil)
 	handler.FetchTradePriceByPairs(context)
 
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
-	assert.Equal(t, "{\"error\":\"missing pair parameter. One (and only one) 'pair' or 'pairs' query parameter is required\",\"status\":400}", recorder.Body.String())
-}
-
-func TestMapTradeResponseTooManyQueryParams(t *testing.T) {
-	serviceMock := &ServiceMock{}
-	mapperMock := &MapperMock{}
-	handler := TradePriceHandler{tradeFetcherService: serviceMock, tradeHandlerMapper: mapperMock}
-
-	recorder := httptest.NewRecorder()
-	context, _ := gin.CreateTestContext(recorder)
-	context.Request, _ = http.NewRequest("GET", "/api/v1/ltp?pair=BTC/USD&pairs=[BTC/USD]", nil)
-	handler.FetchTradePriceByPairs(context)
-
-	assert.Equal(t, http.StatusBadRequest, recorder.Code)
-	assert.Equal(t, "{\"error\":\"one (and only one) 'pair' or 'pairs' query parameter is required\",\"status\":400}", recorder.Body.String())
+	assert.Equal(t, "{\"error\":\"'pairs' param is required\",\"status\":400}", recorder.Body.String())
 }
